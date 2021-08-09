@@ -26,6 +26,10 @@ class ElasticsearchTransport extends Transport {
       this.source.pipe(this); // re-pipes readable
     });
 
+    this.on('finish', (info) => {
+      this.bulkWriter.schedule = () => {};
+    });
+
     this.opts = opts || {};
 
     // Set defaults
@@ -48,6 +52,10 @@ class ElasticsearchTransport extends Transport {
       healthCheckWaitForStatus: 'yellow',
       healthCheckWaitForNodes: '>=1',
       dataStream: false,
+      service_name: 'logs',
+      messageType: '_doc',
+      ensureMappingTemplate: true,
+      elasticsearchVersion: 7,
     });
 
     // Use given client or create one
@@ -112,7 +120,7 @@ class ElasticsearchTransport extends Transport {
     setImmediate(() => {
       this.emit('logged', level);
     });
-
+    meta.service_name = this.opts.service_name;
     const logData = {
       message,
       level,
@@ -120,22 +128,16 @@ class ElasticsearchTransport extends Transport {
       meta,
     };
 
-    const entry = this.opts.useTransformer
-      ? await this.opts.transformer(logData)
-      : info;
+    const entry = await this.opts.transformer(logData);
 
-    let index = this.opts.dataStream
-      ? this.opts.index
-      : this.getIndexName(this.opts);
+    let index = this.getIndexName(this.opts);
 
     if (this.opts.source) {
       entry.source = this.opts.source;
     }
 
     if (entry.indexInterfix !== undefined) {
-      index = this.opts.dataStream
-        ? this.getDataStreamName(this.opts, entry.indexInterfix)
-        : this.getIndexName(this.opts, entry.indexInterfix);
+      index = this.getIndexName(this.opts, entry.indexInterfix);
       delete entry.indexInterfix;
     }
 
