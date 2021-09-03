@@ -37,7 +37,7 @@ class ElasticsearchTransport extends Transport {
       level: 'info',
       index: opts.dataStream ? 'logs-app-default' : null,
       indexPrefix: 'logs',
-      indexSuffixPattern: 'YYYY.MM.DD',
+      indexSuffixPattern: 'YYYY.MM',
       transformer: defaultTransformer,
       useTransformer: true,
       ensureIndexTemplate: true,
